@@ -1,0 +1,84 @@
+# ------------------------------------------------------
+# THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
+# ------------------------------------------------------
+
+type AuthResponse {
+  accessToken: String!
+  user: User!
+}
+
+input CreateProjectInput {
+  description: String
+  name: String!
+}
+
+"""
+A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date-time format.
+"""
+scalar DateTime
+
+type DebugSession {
+  endedAt: DateTime
+  environment: String!
+  id: ID!
+  ipAddress: String
+  metadata: String
+  project: Project!
+  projectId: String!
+  startedAt: DateTime!
+  userAgent: String
+}
+
+input LoginInput {
+  email: String!
+  password: String!
+}
+
+type Mutation {
+  createProject(input: CreateProjectInput!): Project!
+  deleteProject(id: ID!): Project!
+  deleteSession(id: ID!): DebugSession!
+  login(input: LoginInput!): AuthResponse!
+  regenerateProjectKey(id: ID!): Project!
+  register(input: RegisterInput!): AuthResponse!
+  updateProject(id: ID!, input: UpdateProjectInput!): Project!
+}
+
+type Project {
+  apiKey: String!
+  createdAt: DateTime!
+  description: String
+  id: ID!
+  name: String!
+  updatedAt: DateTime!
+  user: User!
+  userId: String!
+}
+
+type Query {
+  getHello: String!
+  me: User!
+  project(id: ID!): Project!
+  projects: [Project!]!
+  session(id: ID!): DebugSession!
+  sessions(projectId: ID!): [DebugSession!]!
+}
+
+input RegisterInput {
+  email: String!
+  name: String
+  password: String!
+}
+
+input UpdateProjectInput {
+  description: String
+  name: String
+}
+
+type User {
+  createdAt: DateTime!
+  email: String!
+  id: ID!
+  name: String
+  updatedAt: DateTime!
+}

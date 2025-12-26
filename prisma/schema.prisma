@@ -1,0 +1,99 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String    @id @default(uuid())
+  email        String    @unique
+  passwordHash String    @map("password_hash")
+  name         String?
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  projects Project[]
+
+  @@map("users")
+}
+
+model Project {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  apiKey      String   @unique @map("api_key")
+  userId      String   @map("user_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  user     User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sessions DebugSession[]
+
+  @@map("projects")
+}
+
+model DebugSession {
+  id          String    @id @default(uuid())
+  projectId   String    @map("project_id")
+  environment String    @default("development")
+  userAgent   String?   @map("user_agent")
+  ipAddress   String?   @map("ip_address")
+  metadata    Json?
+  startedAt   DateTime  @default(now()) @map("started_at")
+  endedAt     DateTime? @map("ended_at")
+
+  project Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  events  DebugEvent[]
+
+  @@index([projectId])
+  @@index([startedAt])
+  @@map("debug_sessions")
+}
+
+model DebugEvent {
+  id            String  @id @default(uuid())
+  sessionId     String  @map("session_id")
+  parentEventId String? @map("parent_event_id")
+
+  // Event info
+  type String // function_enter, function_exit, http_request, etc.
+  name String? // Function name or custom name
+
+  // Source location
+  filePath     String? @map("file_path")
+  lineNumber   Int?    @map("line_number")
+  columnNumber Int?    @map("column_number")
+
+  // Data
+  arguments    Json?
+  returnValue  Json?   @map("return_value")
+  errorMessage String? @map("error_message")
+  errorStack   String? @map("error_stack")
+
+  // HTTP specific
+  httpMethod   String? @map("http_method")
+  httpUrl      String? @map("http_url")
+  httpStatus   Int?    @map("http_status")
+  httpRequest  Json?   @map("http_request")
+  httpResponse Json?   @map("http_response")
+
+  // Timing
+  duration Int? // milliseconds
+  depth    Int  @default(0)
+
+  // Metadata
+  metadata  Json?
+  timestamp DateTime @default(now())
+
+  session     DebugSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  parentEvent DebugEvent?  @relation("EventHierarchy", fields: [parentEventId], references: [id])
+  childEvents DebugEvent[] @relation("EventHierarchy")
+
+  @@index([sessionId])
+  @@index([timestamp])
+  @@index([type])
+  @@map("debug_events")
+}
