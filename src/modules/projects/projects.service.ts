@@ -7,11 +7,33 @@ import { v4 as uuidv4 } from 'uuid';
 export class ProjectsService {
   constructor(private prisma: PrismaService) {}
 
-  async findAll(userId: string) {
-    return this.prisma.project.findMany({
-      where: { userId },
-      include: { user: true },
-    });
+  async findAll(userId: string, page = 1, limit = 10) {
+    const skip = (page - 1) * limit;
+
+    const [items, totalCount] = await Promise.all([
+      this.prisma.project.findMany({
+        where: { userId },
+        skip,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+        include: { user: true },
+      }),
+      this.prisma.project.count({
+        where: { userId },
+      }),
+    ]);
+
+    const totalPages = Math.ceil(totalCount / limit);
+
+    return {
+      items,
+      totalCount,
+      page,
+      limit,
+      totalPages,
+      hasNextPage: page < totalPages,
+      hasPreviousPage: page > 1,
+    };
   }
 
   async findOne(id: string, userId: string) {

@@ -1,5 +1,5 @@
 import { UseGuards } from '@nestjs/common';
-import { Resolver, Query, Mutation, Args, ID } from '@nestjs/graphql';
+import { Resolver, Query, Mutation, Args, ID, Int } from '@nestjs/graphql';
 import type { User as UserEntity } from '@prisma/client';
 import { SessionsService } from './sessions.service';
 import { DebugSession } from './models/session.model';
@@ -9,7 +9,7 @@ import { CurrentUser } from '../../common/decorators/current-user.decorator';
 @Resolver(() => DebugSession)
 @UseGuards(GqlAuthGuard)
 export class SessionsResolver {
-  constructor(private sessionsService: SessionsService) {}
+  constructor(private sessionsService: SessionsService) { }
 
   @Query(() => [DebugSession])
   async sessions(
@@ -17,6 +17,14 @@ export class SessionsResolver {
     @CurrentUser() user: UserEntity,
   ) {
     return this.sessionsService.findAll(projectId, user.id);
+  }
+
+  @Query(() => [DebugSession])
+  async recentSessions(
+    @CurrentUser() user: UserEntity,
+    @Args('limit', { type: () => Int, defaultValue: 5 }) limit: number,
+  ) {
+    return this.sessionsService.findRecent(user.id, limit);
   }
 
   @Query(() => DebugSession)

@@ -3,7 +3,7 @@ import { PrismaService } from '../../prisma/prisma.service';
 
 @Injectable()
 export class SessionsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
   async findAll(projectId: string, userId: string) {
     // Verify project belongs to user
@@ -15,7 +15,13 @@ export class SessionsService {
     return this.prisma.debugSession.findMany({
       where: { projectId },
       orderBy: { startedAt: 'desc' },
-      include: { project: true },
+      include: {
+        project: true,
+        events: {
+          take: 1,
+          orderBy: { timestamp: 'desc' },
+        },
+      },
     });
   }
 
@@ -41,5 +47,22 @@ export class SessionsService {
   async delete(id: string, userId: string) {
     await this.findOne(id, userId);
     return this.prisma.debugSession.delete({ where: { id } });
+  }
+
+  async findRecent(userId: string, limit = 5) {
+    return this.prisma.debugSession.findMany({
+      where: {
+        project: { userId },
+      },
+      orderBy: { startedAt: 'desc' },
+      take: limit,
+      include: {
+        project: true,
+        events: {
+          take: 1,
+          orderBy: { timestamp: 'desc' }
+        }
+      },
+    });
   }
 }

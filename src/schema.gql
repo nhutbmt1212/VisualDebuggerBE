@@ -12,14 +12,47 @@ input CreateProjectInput {
   name: String!
 }
 
+type DashboardStats {
+  activeSessions: Int!
+  avgLatency: String!
+  errorRate: Float!
+  eventFrequency: [Int!]!
+  totalEvents: Int!
+}
+
 """
 A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date-time format.
 """
 scalar DateTime
 
+type DebugEvent {
+  arguments: String
+  childEvents: [DebugEvent!]
+  columnNumber: Int
+  depth: Int!
+  duration: Int
+  errorMessage: String
+  errorStack: String
+  filePath: String
+  httpMethod: String
+  httpStatus: Int
+  httpUrl: String
+  id: ID!
+  lineNumber: Int
+  name: String
+  parentEvent: DebugEvent
+  parentEventId: String
+  returnValue: String
+  session: DebugSession!
+  sessionId: String!
+  timestamp: DateTime!
+  type: String!
+}
+
 type DebugSession {
   endedAt: DateTime
   environment: String!
+  events: [DebugEvent!]
   id: ID!
   ipAddress: String
   metadata: String
@@ -44,6 +77,16 @@ type Mutation {
   updateProject(id: ID!, input: UpdateProjectInput!): Project!
 }
 
+type PaginatedProjects {
+  hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
+  items: [Project!]!
+  limit: Int!
+  page: Int!
+  totalCount: Int!
+  totalPages: Int!
+}
+
 type Project {
   apiKey: String!
   createdAt: DateTime!
@@ -56,10 +99,12 @@ type Project {
 }
 
 type Query {
+  dashboardStats: DashboardStats!
   getHello: String!
   me: User!
   project(id: ID!): Project!
-  projects: [Project!]!
+  projects(limit: Int! = 10, page: Int! = 1): PaginatedProjects!
+  recentSessions(limit: Int! = 5): [DebugSession!]!
   session(id: ID!): DebugSession!
   sessions(projectId: ID!): [DebugSession!]!
 }

@@ -7,14 +7,24 @@ import { CreateProjectInput, UpdateProjectInput } from './dto/project.input';
 import { GqlAuthGuard } from '../auth/guards/gql-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 
+import { PaginatedProjects } from './models/paginated-projects.model';
+import { PaginationArgs } from '../../common/dto/pagination.args';
+
 @Resolver(() => Project)
 @UseGuards(GqlAuthGuard)
 export class ProjectsResolver {
   constructor(private projectsService: ProjectsService) {}
 
-  @Query(() => [Project])
-  async projects(@CurrentUser() user: UserEntity) {
-    return this.projectsService.findAll(user.id);
+  @Query(() => PaginatedProjects)
+  async projects(
+    @CurrentUser() user: UserEntity,
+    @Args() paginationArgs: PaginationArgs,
+  ) {
+    return this.projectsService.findAll(
+      user.id,
+      paginationArgs.page,
+      paginationArgs.limit,
+    );
   }
 
   @Query(() => Project)

@@ -13,6 +13,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { ProjectsModule } from './modules/projects/projects.module';
 import { SessionsModule } from './modules/sessions/sessions.module';
 import { DebugModule } from './modules/debug/debug.module';
+import { StatisticsModule } from './modules/statistics/statistics.module';
 
 @Module({
   imports: [
@@ -32,8 +33,9 @@ import { DebugModule } from './modules/debug/debug.module';
     ProjectsModule,
     SessionsModule,
     DebugModule,
+    StatisticsModule,
   ],
   controllers: [AppController],
   providers: [AppService, AppResolver],
 })
-export class AppModule {}
+export class AppModule { }

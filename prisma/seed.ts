@@ -46,130 +46,104 @@ async function main() {
     console.log('   - developer@example.com (password: password123)');
     console.log('   - tester@example.com (password: password123)');
 
-    // Create sample projects
-    const project1 = await prisma.project.create({
-        data: {
-            name: 'E-Commerce Platform',
-            description: 'Main production e-commerce application',
-            apiKey: 'vd_ecommerce_prod_key_12345',
-            userId: user1.id,
-        },
-    });
+    // Common data
+    const environments = ['production', 'staging', 'development'];
+    const eventTypes = ['FUNCTION_CALL', 'HTTP_REQUEST', 'ERROR', 'LOG'];
+    const httpMethods = ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'];
+    const apiPaths = [
+        '/api/v1/projects',
+        '/api/v1/auth/login',
+        '/api/v1/users/me',
+        '/api/v1/events',
+        '/api/v1/sessions',
+        '/api/v1/analytics/stats',
+        '/api/v1/checkout',
+        '/api/v1/products',
+        '/api/v1/cart'
+    ];
+    const users = [user1, user2, user3];
 
-    const project2 = await prisma.project.create({
-        data: {
-            name: 'Mobile App Backend',
-            description: 'REST API for mobile application',
-            apiKey: 'vd_mobile_api_key_67890',
-            userId: user2.id,
-        },
-    });
+    // Create more projects
+    const projectNames = ['E-Commerce Platform', 'Mobile App Backend', 'Analytics Dashboard', 'Payment Gateway', 'Auth Service', 'Notification Hub'];
+    const createdProjects = [];
 
-    const project3 = await prisma.project.create({
-        data: {
-            name: 'Analytics Dashboard',
-            description: 'Real-time analytics and reporting',
-            apiKey: 'vd_analytics_key_abcdef',
-            userId: user2.id,
-        },
-    });
-
-    console.log('✅ Created 3 sample projects');
-
-    // Create sample debug sessions
-    const session1 = await prisma.debugSession.create({
-        data: {
-            projectId: project1.id,
-            environment: 'production',
-            userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
-            ipAddress: '192.168.1.100',
-            metadata: {
-                browser: 'Chrome',
-                version: '120.0',
-                os: 'Windows 10',
+    for (const name of projectNames) {
+        const project = await prisma.project.create({
+            data: {
+                name,
+                description: `Description for ${name}`,
+                apiKey: `vd_${name.toLowerCase().replace(/ /g, '_')}_key_${Math.random().toString(36).substring(7)}`,
+                userId: users[Math.floor(Math.random() * users.length)].id,
             },
-        },
-    });
+        });
+        createdProjects.push(project);
+    }
 
-    const session2 = await prisma.debugSession.create({
-        data: {
-            projectId: project2.id,
-            environment: 'development',
-            userAgent: 'PostmanRuntime/7.36.0',
-            ipAddress: '127.0.0.1',
-            metadata: {
-                tool: 'Postman',
-                version: '10.0',
-            },
-        },
-    });
+    console.log(`✅ Created ${createdProjects.length} sample projects`);
 
-    console.log('✅ Created 2 sample debug sessions');
+    // Generate sessions and events for the last 30 days
+    console.log('⏳ Generating sessions and events (this may take a moment)...');
 
-    // Create sample debug events
-    await prisma.debugEvent.create({
-        data: {
-            sessionId: session1.id,
-            type: 'FUNCTION_CALL',
-            name: 'processCheckout',
-            filePath: '/src/services/checkout.service.ts',
-            lineNumber: 45,
-            columnNumber: 12,
-            arguments: {
-                userId: 'user_123',
-                cartId: 'cart_456',
-                total: 299.99,
-            },
-            returnValue: {
-                orderId: 'order_789',
-                status: 'success',
-            },
-            duration: 1250,
-            depth: 0,
-            metadata: {
-                requestId: 'req_abc123',
-            },
-        },
-    });
+    let totalSessions = 0;
+    let totalEvents = 0;
 
-    await prisma.debugEvent.create({
-        data: {
-            sessionId: session1.id,
-            type: 'HTTP_REQUEST',
-            name: 'POST /api/checkout',
-            filePath: '/src/controllers/checkout.controller.ts',
-            lineNumber: 23,
-            httpMethod: 'POST',
-            httpUrl: '/api/checkout',
-            httpStatus: 200,
-            duration: 1500,
-            depth: 0,
-            metadata: {
-                headers: {
-                    'content-type': 'application/json',
+    for (const project of createdProjects) {
+        // Each project has between 10 to 30 sessions
+        const sessionCount = Math.floor(Math.random() * 20) + 10;
+
+        for (let i = 0; i < sessionCount; i++) {
+            const startedAt = new Date();
+            startedAt.setDate(startedAt.getDate() - Math.floor(Math.random() * 30));
+            startedAt.setHours(Math.floor(Math.random() * 24), Math.floor(Math.random() * 60));
+
+            const session = await prisma.debugSession.create({
+                data: {
+                    projectId: project.id,
+                    environment: environments[Math.floor(Math.random() * environments.length)],
+                    userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                    ipAddress: `192.168.1.${Math.floor(Math.random() * 255)}`,
+                    startedAt,
+                    metadata: {
+                        browser: 'Chrome',
+                        version: '120.0',
+                    },
                 },
-            },
-        },
-    });
+            });
+            totalSessions++;
 
-    await prisma.debugEvent.create({
-        data: {
-            sessionId: session2.id,
-            type: 'ERROR',
-            name: 'ValidationError',
-            filePath: '/src/validators/user.validator.ts',
-            lineNumber: 67,
-            errorMessage: 'Email format is invalid',
-            errorStack: 'ValidationError: Email format is invalid\n    at validate...',
-            depth: 0,
-            metadata: {
-                field: 'email',
-                value: 'invalid-email',
-            },
-        },
-    });
+            // Each session has between 5 to 50 events
+            const eventCount = Math.floor(Math.random() * 45) + 5;
+            for (let j = 0; j < eventCount; j++) {
+                const type = eventTypes[Math.floor(Math.random() * eventTypes.length)];
+                const isError = type === 'ERROR';
+                const isHttp = type === 'HTTP_REQUEST';
 
-    console.log('✅ Created 3 sample debug events');
+                const method = isHttp ? httpMethods[Math.floor(Math.random() * httpMethods.length)] : null;
+                const path = isHttp ? apiPaths[Math.floor(Math.random() * apiPaths.length)] : null;
+                const name = isError ? 'ErrorEvent' : (isHttp ? `${method} ${path}` : `Event_${j}`);
+
+                await prisma.debugEvent.create({
+                    data: {
+                        sessionId: session.id,
+                        type,
+                        name,
+                        filePath: `/src/app/${['utils', 'services', 'components', 'api'][Math.floor(Math.random() * 4)]}/file_${j}.ts`,
+                        lineNumber: Math.floor(Math.random() * 500),
+                        duration: type === 'HTTP_REQUEST' || type === 'FUNCTION_CALL' ? Math.floor(Math.random() * 1000) : null,
+                        httpMethod: method,
+                        httpUrl: path,
+                        httpStatus: isHttp ? (Math.random() > 0.1 ? 200 : (Math.random() > 0.5 ? 400 : 500)) : null,
+                        errorMessage: isError ? 'Something went wrong' : null,
+                        timestamp: new Date(startedAt.getTime() + j * 1000), // Events slightly after session start
+                    },
+                });
+                totalEvents++;
+            }
+        }
+    }
+
+    console.log(`✅ Created ${totalSessions} sample debug sessions`);
+    console.log(`✅ Created ${totalEvents} sample debug events`);
 
     console.log('\n🎉 Database seeding completed successfully!');
     console.log('\n📊 Summary:');

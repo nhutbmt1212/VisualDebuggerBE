@@ -1,5 +1,6 @@
 import { Field, ID, ObjectType, GraphQLISODateTime } from '@nestjs/graphql';
 import { Project } from '../../projects/models/project.model';
+import { DebugEvent } from '../../debug/models/event.model';
 
 @ObjectType()
 export class DebugSession {
@@ -29,4 +30,7 @@ export class DebugSession {
 
   @Field(() => Project)
   project: Project;
+
+  @Field(() => [DebugEvent], { nullable: true })
+  events?: DebugEvent[];
 }
