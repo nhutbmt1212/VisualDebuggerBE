@@ -5,9 +5,12 @@ import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class StatisticsService {
-  constructor(private prisma: PrismaService) { }
+  constructor(private prisma: PrismaService) {}
 
-  async getDashboardStats(userId: string, range = '24h'): Promise<DashboardStats> {
+  async getDashboardStats(
+    userId: string,
+    range = '24h',
+  ): Promise<DashboardStats> {
     const userProjects = await this.prisma.project.findMany({
       where: { userId },
       select: { id: true },
@@ -32,25 +35,44 @@ export class StatisticsService {
     const { current, previous } = this.getPeriods(range);
 
     // Current Stats
-    const currentStats = await this.calculateStats(projectIds, current.start, current.end);
+    const currentStats = await this.calculateStats(
+      projectIds,
+      current.start,
+      current.end,
+    );
     // Previous Stats
-    const previousStats = await this.calculateStats(projectIds, previous.start, previous.end);
+    const previousStats = await this.calculateStats(
+      projectIds,
+      previous.start,
+      previous.end,
+    );
 
     // Real Trend Data
     const trend = await this.calculateTrend(projectIds, range);
 
     return {
       ...currentStats,
-      totalEventsChange: this.calcPercentChange(currentStats.totalEvents, previousStats.totalEvents),
-      errorRateChange: parseFloat((currentStats.errorRate - previousStats.errorRate).toFixed(1)),
-      avgLatencyChange: parseInt(currentStats.avgLatency) - parseInt(previousStats.avgLatency),
-      activeSessionsChange: currentStats.activeSessions - previousStats.activeSessions,
+      totalEventsChange: this.calcPercentChange(
+        currentStats.totalEvents,
+        previousStats.totalEvents,
+      ),
+      errorRateChange: parseFloat(
+        (currentStats.errorRate - previousStats.errorRate).toFixed(1),
+      ),
+      avgLatencyChange:
+        parseInt(currentStats.avgLatency) - parseInt(previousStats.avgLatency),
+      activeSessionsChange:
+        currentStats.activeSessions - previousStats.activeSessions,
       eventFrequency: [120, 150, 200, 180, 250, 300, 280],
       trend,
     };
   }
 
-  async getProjectStats(userId: string, projectId: string, range = '24h'): Promise<DashboardStats> {
+  async getProjectStats(
+    userId: string,
+    projectId: string,
+    range = '24h',
+  ): Promise<DashboardStats> {
     const project = await this.prisma.project.findFirst({
       where: { id: projectId, userId },
     });
@@ -59,18 +81,33 @@ export class StatisticsService {
     const { current, previous } = this.getPeriods(range);
 
     // Current Stats
-    const currentStats = await this.calculateStats([projectId], current.start, current.end);
+    const currentStats = await this.calculateStats(
+      [projectId],
+      current.start,
+      current.end,
+    );
     // Previous Stats
-    const previousStats = await this.calculateStats([projectId], previous.start, previous.end);
+    const previousStats = await this.calculateStats(
+      [projectId],
+      previous.start,
+      previous.end,
+    );
 
     const trend = await this.calculateTrend([projectId], range);
 
     return {
       ...currentStats,
-      totalEventsChange: this.calcPercentChange(currentStats.totalEvents, previousStats.totalEvents),
-      errorRateChange: parseFloat((currentStats.errorRate - previousStats.errorRate).toFixed(1)),
-      avgLatencyChange: parseInt(currentStats.avgLatency) - parseInt(previousStats.avgLatency),
-      activeSessionsChange: currentStats.activeSessions - previousStats.activeSessions,
+      totalEventsChange: this.calcPercentChange(
+        currentStats.totalEvents,
+        previousStats.totalEvents,
+      ),
+      errorRateChange: parseFloat(
+        (currentStats.errorRate - previousStats.errorRate).toFixed(1),
+      ),
+      avgLatencyChange:
+        parseInt(currentStats.avgLatency) - parseInt(previousStats.avgLatency),
+      activeSessionsChange:
+        currentStats.activeSessions - previousStats.activeSessions,
       eventFrequency: [10, 20, 15, 30, 25, 40, 35],
       trend,
     };
@@ -136,7 +173,7 @@ export class StatisticsService {
 
   private calcPercentChange(current: number, previous: number): number {
     if (previous === 0) return current > 0 ? 100 : 0;
-    return parseFloat(((current - previous) / previous * 100).toFixed(1));
+    return parseFloat((((current - previous) / previous) * 100).toFixed(1));
   }
 
   private async calculateTrend(projectIds: string[], range: string) {

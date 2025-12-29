@@ -9,7 +9,7 @@ export class DebugService {
   constructor(
     private prisma: PrismaService,
     private gateway: DebugGateway,
-  ) { }
+  ) {}
 
   async createSession(projectId: string, data: CreateSessionDto) {
     const session = await this.prisma.debugSession.create({
@@ -48,7 +48,10 @@ export class DebugService {
         },
       });
     } catch (error) {
-      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2002'
+      ) {
         // Record already exists, ignore
         return;
       }
@@ -82,8 +85,10 @@ export class DebugService {
         filePath: data.filePath,
         lineNumber: data.lineNumber,
         columnNumber: data.columnNumber,
-        arguments: (data.arguments || data.http?.requestBody) as Prisma.JsonObject,
-        returnValue: (data.returnValue || data.http?.responseBody) as Prisma.JsonObject,
+        arguments: (data.arguments ||
+          data.http?.requestBody) as Prisma.JsonObject,
+        returnValue: (data.returnValue ||
+          data.http?.responseBody) as Prisma.JsonObject,
         errorMessage: data.errorMessage || data.error?.message,
         errorStack: data.errorStack || data.error?.stack,
         httpMethod: data.httpMethod || data.http?.method,
@@ -105,7 +110,7 @@ export class DebugService {
 
   async createEvents(projectId: string, events: any[]) {
     // Pre-ensure all unique sessions in the batch
-    const sessionIds = [...new Set(events.map(e => e.sessionId))];
+    const sessionIds = [...new Set(events.map((e) => e.sessionId))];
     for (const sid of sessionIds) {
       await this.ensureSession(projectId, sid);
     }

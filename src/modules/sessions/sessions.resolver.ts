@@ -1,5 +1,14 @@
 import { UseGuards } from '@nestjs/common';
-import { Resolver, Query, Mutation, Args, ID, Int, ResolveField, Parent } from '@nestjs/graphql';
+import {
+  Resolver,
+  Query,
+  Mutation,
+  Args,
+  ID,
+  Int,
+  ResolveField,
+  Parent,
+} from '@nestjs/graphql';
 import type { User as UserEntity } from '@prisma/client';
 import { SessionsService } from './sessions.service';
 import { DebugSession } from './models/session.model';
@@ -10,7 +19,7 @@ import { CurrentUser } from '../../common/decorators/current-user.decorator';
 @Resolver(() => DebugSession)
 @UseGuards(GqlAuthGuard)
 export class SessionsResolver {
-  constructor(private sessionsService: SessionsService) { }
+  constructor(private sessionsService: SessionsService) {}
 
   @ResolveField(() => String, { nullable: true })
   metadata(@Parent() session: any): string | null {

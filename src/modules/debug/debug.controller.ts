@@ -15,7 +15,7 @@ import type { CreateSessionDto, CreateEventDto } from './dto/debug.dto';
 @Controller('api')
 @UseGuards(ApiKeyGuard)
 export class DebugController {
-  constructor(private readonly debugService: DebugService) { }
+  constructor(private readonly debugService: DebugService) {}
 
   @Post('session')
   async createSession(@Req() req: Request, @Body() body: CreateSessionDto) {

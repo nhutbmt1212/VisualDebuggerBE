@@ -6,7 +6,7 @@ import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class ProjectsService {
-  constructor(private prisma: PrismaService) { }
+  constructor(private prisma: PrismaService) {}
 
   async findAll(userId: string, page = 1, limit = 10) {
     const skip = (page - 1) * limit;
@@ -29,8 +29,9 @@ export class ProjectsService {
     twentyFourHoursAgo.setHours(twentyFourHoursAgo.getHours() - 24);
 
     const projectIds = items.map((p) => p.id);
-    const trendResults: any[] = projectIds.length > 0
-      ? await this.prisma.$queryRaw`
+    const trendResults: any[] =
+      projectIds.length > 0
+        ? await this.prisma.$queryRaw`
           SELECT 
             s.project_id as "projectId",
             date_trunc('hour', e.timestamp) as time_bucket,
@@ -41,13 +42,15 @@ export class ProjectsService {
             AND e.timestamp >= ${twentyFourHoursAgo}
           GROUP BY 1, 2
         `
-      : [];
+        : [];
 
     const now = new Date();
     const itemsWithTrend = items.map((project) => {
       const hourlyCounts = new Array(24).fill(0);
 
-      const projectTrends = trendResults.filter(r => r.projectId === project.id);
+      const projectTrends = trendResults.filter(
+        (r) => r.projectId === project.id,
+      );
 
       projectTrends.forEach((row) => {
         const diffMs = now.getTime() - new Date(row.time_bucket).getTime();

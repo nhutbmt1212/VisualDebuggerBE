@@ -9,7 +9,7 @@ import { DashboardStats } from './models/dashboard-stats.model';
 @Resolver()
 @UseGuards(GqlAuthGuard)
 export class StatisticsResolver {
-  constructor(private statisticsService: StatisticsService) { }
+  constructor(private statisticsService: StatisticsService) {}
 
   @Query(() => DashboardStats)
   async dashboardStats(

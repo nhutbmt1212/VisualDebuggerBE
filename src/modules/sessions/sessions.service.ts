@@ -3,7 +3,7 @@ import { PrismaService } from '../../prisma/prisma.service';
 
 @Injectable()
 export class SessionsService {
-  constructor(private prisma: PrismaService) { }
+  constructor(private prisma: PrismaService) {}
 
   async findAll(projectId: string, userId: string, page = 1, limit = 10) {
     // Verify project belongs to user
@@ -85,8 +85,8 @@ export class SessionsService {
           project: true,
           events: {
             take: 1,
-            orderBy: { timestamp: 'desc' }
-          }
+            orderBy: { timestamp: 'desc' },
+          },
         },
       }),
       this.prisma.debugSession.count({

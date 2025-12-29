@@ -9,4 +9,4 @@ import { DebugResolver } from './debug.resolver';
   providers: [DebugService, DebugGateway, DebugResolver],
   controllers: [DebugController],
 })
-export class DebugModule { }
+export class DebugModule {}
