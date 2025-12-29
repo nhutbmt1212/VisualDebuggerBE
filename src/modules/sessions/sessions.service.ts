@@ -5,24 +5,45 @@ import { PrismaService } from '../../prisma/prisma.service';
 export class SessionsService {
   constructor(private prisma: PrismaService) { }
 
-  async findAll(projectId: string, userId: string) {
+  async findAll(projectId: string, userId: string, page = 1, limit = 10) {
     // Verify project belongs to user
     const project = await this.prisma.project.findFirst({
       where: { id: projectId, userId },
     });
     if (!project) throw new NotFoundException('Project not found');
 
-    return this.prisma.debugSession.findMany({
-      where: { projectId },
-      orderBy: { startedAt: 'desc' },
-      include: {
-        project: true,
-        events: {
-          take: 1,
-          orderBy: { timestamp: 'desc' },
+    const skip = (page - 1) * limit;
+
+    const [items, totalCount] = await this.prisma.$transaction([
+      this.prisma.debugSession.findMany({
+        where: { projectId },
+        orderBy: { startedAt: 'desc' },
+        take: limit,
+        skip,
+        include: {
+          project: true,
+          events: {
+            take: 1,
+            orderBy: { timestamp: 'desc' },
+          },
         },
-      },
-    });
+      }),
+      this.prisma.debugSession.count({
+        where: { projectId },
+      }),
+    ]);
+
+    const totalPages = Math.ceil(totalCount / limit);
+
+    return {
+      items,
+      totalCount,
+      page,
+      limit,
+      totalPages,
+      hasNextPage: page < totalPages,
+      hasPreviousPage: page > 1,
+    };
   }
 
   async findOne(id: string, userId: string) {
@@ -49,20 +70,42 @@ export class SessionsService {
     return this.prisma.debugSession.delete({ where: { id } });
   }
 
-  async findRecent(userId: string, limit = 5) {
-    return this.prisma.debugSession.findMany({
-      where: {
-        project: { userId },
-      },
-      orderBy: { startedAt: 'desc' },
-      take: limit,
-      include: {
-        project: true,
-        events: {
-          take: 1,
-          orderBy: { timestamp: 'desc' }
-        }
-      },
-    });
+  async findRecent(userId: string, page = 1, limit = 5) {
+    const skip = (page - 1) * limit;
+
+    const [items, totalCount] = await this.prisma.$transaction([
+      this.prisma.debugSession.findMany({
+        where: {
+          project: { userId },
+        },
+        orderBy: { startedAt: 'desc' },
+        take: limit,
+        skip,
+        include: {
+          project: true,
+          events: {
+            take: 1,
+            orderBy: { timestamp: 'desc' }
+          }
+        },
+      }),
+      this.prisma.debugSession.count({
+        where: {
+          project: { userId },
+        },
+      }),
+    ]);
+
+    const totalPages = Math.ceil(totalCount / limit);
+
+    return {
+      items,
+      totalCount,
+      page,
+      limit,
+      totalPages,
+      hasNextPage: page < totalPages,
+      hasPreviousPage: page > 1,
+    };
   }
 }

@@ -9,7 +9,7 @@ export class DebugService {
   constructor(
     private prisma: PrismaService,
     private gateway: DebugGateway,
-  ) {}
+  ) { }
 
   async createSession(projectId: string, data: CreateSessionDto) {
     const session = await this.prisma.debugSession.create({
@@ -36,26 +36,63 @@ export class DebugService {
     return session;
   }
 
-  async createEvent(data: CreateEventDto) {
-    const event = await this.prisma.debugEvent.create({
-      data: {
+  private async ensureSession(projectId: string, sessionId: string) {
+    try {
+      await this.prisma.debugSession.upsert({
+        where: { id: sessionId },
+        update: {},
+        create: {
+          id: sessionId,
+          projectId,
+          environment: 'development',
+        },
+      });
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+        // Record already exists, ignore
+        return;
+      }
+      throw error;
+    }
+  }
+
+  async createEvent(projectId: string, data: any) {
+    await this.ensureSession(projectId, data.sessionId);
+
+    // Handle parentEventId safely - only link if it exists
+    let parentEventId = data.parentEventId || null;
+    if (parentEventId) {
+      const parentExists = await this.prisma.debugEvent.findUnique({
+        where: { id: parentEventId },
+      });
+      if (!parentExists) {
+        parentEventId = null;
+      }
+    }
+
+    const event = await this.prisma.debugEvent.upsert({
+      where: { id: data.id || '' },
+      update: {},
+      create: {
+        id: data.id,
         sessionId: data.sessionId,
-        parentEventId: data.parentEventId || null,
+        parentEventId: parentEventId,
         type: data.type,
-        name: data.name,
+        name: data.name || data.functionName,
         filePath: data.filePath,
         lineNumber: data.lineNumber,
         columnNumber: data.columnNumber,
-        arguments: data.arguments as Prisma.JsonObject,
-        returnValue: data.returnValue as Prisma.JsonObject,
-        errorMessage: data.errorMessage,
-        errorStack: data.errorStack,
-        httpMethod: data.httpMethod,
-        httpUrl: data.httpUrl,
-        httpStatus: data.httpStatus,
+        arguments: (data.arguments || data.http?.requestBody) as Prisma.JsonObject,
+        returnValue: (data.returnValue || data.http?.responseBody) as Prisma.JsonObject,
+        errorMessage: data.errorMessage || data.error?.message,
+        errorStack: data.errorStack || data.error?.stack,
+        httpMethod: data.httpMethod || data.http?.method,
+        httpUrl: data.httpUrl || data.http?.url,
+        httpStatus: data.httpStatus || data.http?.statusCode,
         duration: data.duration,
         depth: data.depth || 0,
         metadata: data.metadata as Prisma.JsonObject,
+        timestamp: data.timestamp ? new Date(data.timestamp) : undefined,
       },
       include: {
         session: true,
@@ -66,10 +103,16 @@ export class DebugService {
     return event;
   }
 
-  async createEvents(events: CreateEventDto[]) {
+  async createEvents(projectId: string, events: any[]) {
+    // Pre-ensure all unique sessions in the batch
+    const sessionIds = [...new Set(events.map(e => e.sessionId))];
+    for (const sid of sessionIds) {
+      await this.ensureSession(projectId, sid);
+    }
+
     const results = [];
     for (const eventData of events) {
-      results.push(await this.createEvent(eventData));
+      results.push(await this.createEvent(projectId, eventData));
     }
     return results;
   }

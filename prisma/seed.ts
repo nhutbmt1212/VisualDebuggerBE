@@ -85,8 +85,9 @@ async function main() {
     console.log('⏳ Generating sessions and events (this may take a moment)...');
 
     let totalSessions = 0;
-    let totalEvents = 0;
+    const allEventsData: any[] = [];
 
+    // Process projects sequentially to stay within connection limits
     for (const project of createdProjects) {
         // Each project has between 10 to 30 sessions
         const sessionCount = Math.floor(Math.random() * 20) + 10;
@@ -111,7 +112,6 @@ async function main() {
             });
             totalSessions++;
 
-            // Each session has between 5 to 50 events
             const eventCount = Math.floor(Math.random() * 45) + 5;
             for (let j = 0; j < eventCount; j++) {
                 const type = eventTypes[Math.floor(Math.random() * eventTypes.length)];
@@ -122,28 +122,37 @@ async function main() {
                 const path = isHttp ? apiPaths[Math.floor(Math.random() * apiPaths.length)] : null;
                 const name = isError ? 'ErrorEvent' : (isHttp ? `${method} ${path}` : `Event_${j}`);
 
-                await prisma.debugEvent.create({
-                    data: {
-                        sessionId: session.id,
-                        type,
-                        name,
-                        filePath: `/src/app/${['utils', 'services', 'components', 'api'][Math.floor(Math.random() * 4)]}/file_${j}.ts`,
-                        lineNumber: Math.floor(Math.random() * 500),
-                        duration: type === 'HTTP_REQUEST' || type === 'FUNCTION_CALL' ? Math.floor(Math.random() * 1000) : null,
-                        httpMethod: method,
-                        httpUrl: path,
-                        httpStatus: isHttp ? (Math.random() > 0.1 ? 200 : (Math.random() > 0.5 ? 400 : 500)) : null,
-                        errorMessage: isError ? 'Something went wrong' : null,
-                        timestamp: new Date(startedAt.getTime() + j * 1000), // Events slightly after session start
-                    },
+                allEventsData.push({
+                    sessionId: session.id,
+                    type,
+                    name,
+                    filePath: `/src/app/${['utils', 'services', 'components', 'api'][Math.floor(Math.random() * 4)]}/file_${j}.ts`,
+                    lineNumber: Math.floor(Math.random() * 500),
+                    duration: type === 'HTTP_REQUEST' || type === 'FUNCTION_CALL' ? Math.floor(Math.random() * 1000) : null,
+                    httpMethod: method,
+                    httpUrl: path,
+                    httpStatus: isHttp ? (Math.random() > 0.1 ? 200 : (Math.random() > 0.5 ? 400 : 500)) : null,
+                    errorMessage: isError ? 'Something went wrong' : null,
+                    timestamp: new Date(new Date(session.startedAt).getTime() + j * 1000),
                 });
-                totalEvents++;
             }
         }
     }
 
+    // Batch create all events
+    console.log(`📦 Batch inserting ${allEventsData.length} events...`);
+    if (allEventsData.length > 0) {
+        // Prisma createMany has limits on some DBs, so we chunk it
+        const chunkSize = 1000;
+        for (let i = 0; i < allEventsData.length; i += chunkSize) {
+            const chunk = allEventsData.slice(i, i + chunkSize);
+            await prisma.debugEvent.createMany({ data: chunk });
+            console.log(`   - Inserted ${Math.min(i + chunkSize, allEventsData.length)}/${allEventsData.length} events`);
+        }
+    }
+
     console.log(`✅ Created ${totalSessions} sample debug sessions`);
-    console.log(`✅ Created ${totalEvents} sample debug events`);
+    console.log(`✅ Created ${allEventsData.length} sample debug events`);
 
     console.log('\n🎉 Database seeding completed successfully!');
     console.log('\n📊 Summary:');

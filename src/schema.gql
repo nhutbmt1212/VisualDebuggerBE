@@ -14,10 +14,15 @@ input CreateProjectInput {
 
 type DashboardStats {
   activeSessions: Int!
+  activeSessionsChange: Float!
   avgLatency: String!
+  avgLatencyChange: Float!
   errorRate: Float!
+  errorRateChange: Float!
   eventFrequency: [Int!]!
   totalEvents: Int!
+  totalEventsChange: Float!
+  trend: [TrendData!]!
 }
 
 """
@@ -87,7 +92,18 @@ type PaginatedProjects {
   totalPages: Int!
 }
 
+type PaginatedSessions {
+  hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
+  items: [DebugSession!]!
+  limit: Int!
+  page: Int!
+  totalCount: Int!
+  totalPages: Int!
+}
+
 type Project {
+  activityTrend: [Float!]
   apiKey: String!
   createdAt: DateTime!
   description: String
@@ -99,20 +115,26 @@ type Project {
 }
 
 type Query {
-  dashboardStats: DashboardStats!
+  dashboardStats(range: String): DashboardStats!
   getHello: String!
   me: User!
   project(id: ID!): Project!
+  projectStats(projectId: ID!, range: String): DashboardStats!
   projects(limit: Int! = 10, page: Int! = 1): PaginatedProjects!
-  recentSessions(limit: Int! = 5): [DebugSession!]!
+  recentSessions(limit: Int! = 5, page: Int! = 1): PaginatedSessions!
   session(id: ID!): DebugSession!
-  sessions(projectId: ID!): [DebugSession!]!
+  sessions(limit: Int! = 10, page: Int! = 1, projectId: ID!): PaginatedSessions!
 }
 
 input RegisterInput {
   email: String!
   name: String
   password: String!
+}
+
+type TrendData {
+  hour: String!
+  requests: Int!
 }
 
 input UpdateProjectInput {

@@ -26,4 +26,7 @@ export class Project {
 
   @Field()
   updatedAt: Date;
+
+  @Field(() => [Number], { nullable: true })
+  activityTrend?: number[];
 }

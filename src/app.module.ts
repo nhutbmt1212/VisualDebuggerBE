@@ -38,4 +38,4 @@ import { StatisticsModule } from './modules/statistics/statistics.module';
   controllers: [AppController],
   providers: [AppService, AppResolver],
 })
-export class AppModule { }
+export class AppModule {}

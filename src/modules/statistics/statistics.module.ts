@@ -4,8 +4,8 @@ import { StatisticsResolver } from './statistics.resolver';
 import { PrismaModule } from '../../prisma/prisma.module';
 
 @Module({
-    imports: [PrismaModule],
-    providers: [StatisticsService, StatisticsResolver],
-    exports: [StatisticsService],
+  imports: [PrismaModule],
+  providers: [StatisticsService, StatisticsResolver],
+  exports: [StatisticsService],
 })
-export class StatisticsModule { }
+export class StatisticsModule {}
