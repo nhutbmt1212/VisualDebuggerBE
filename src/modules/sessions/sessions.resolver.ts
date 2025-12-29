@@ -9,7 +9,10 @@ import {
   ResolveField,
   Parent,
 } from '@nestjs/graphql';
-import type { User as UserEntity } from '@prisma/client';
+import type {
+  User as UserEntity,
+  DebugSession as PrismaSession,
+} from '@prisma/client';
 import { SessionsService } from './sessions.service';
 import { DebugSession } from './models/session.model';
 import { PaginatedSessions } from './models/paginated-sessions.model';
@@ -22,12 +25,12 @@ export class SessionsResolver {
   constructor(private sessionsService: SessionsService) {}
 
   @ResolveField(() => String, { nullable: true })
-  metadata(@Parent() session: any): string | null {
+  metadata(@Parent() session: PrismaSession): string | null {
     if (!session.metadata) return null;
     if (typeof session.metadata === 'object') {
       return JSON.stringify(session.metadata);
     }
-    return session.metadata;
+    return session.metadata as unknown as string;
   }
 
   @Query(() => PaginatedSessions)

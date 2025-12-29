@@ -4,6 +4,17 @@ import { CreateProjectInput, UpdateProjectInput } from './dto/project.input';
 import { v4 as uuidv4 } from 'uuid';
 import { Prisma } from '@prisma/client';
 
+interface ProjectTrendRaw {
+  projectId: string;
+  time_bucket: Date;
+  count: number;
+}
+
+interface SingleProjectTrendRaw {
+  time_bucket: Date;
+  count: number;
+}
+
 @Injectable()
 export class ProjectsService {
   constructor(private prisma: PrismaService) {}
@@ -29,9 +40,9 @@ export class ProjectsService {
     twentyFourHoursAgo.setHours(twentyFourHoursAgo.getHours() - 24);
 
     const projectIds = items.map((p) => p.id);
-    const trendResults: any[] =
+    const trendResults =
       projectIds.length > 0
-        ? await this.prisma.$queryRaw`
+        ? await this.prisma.$queryRaw<ProjectTrendRaw[]>`
           SELECT 
             s.project_id as "projectId",
             date_trunc('hour', e.timestamp) as time_bucket,
@@ -90,7 +101,7 @@ export class ProjectsService {
     const twentyFourHoursAgo = new Date();
     twentyFourHoursAgo.setHours(twentyFourHoursAgo.getHours() - 24);
 
-    const trendResults: any[] = await this.prisma.$queryRaw`
+    const trendResults = await this.prisma.$queryRaw<SingleProjectTrendRaw[]>`
       SELECT 
         date_trunc('hour', timestamp) as time_bucket,
         count(*)::int as count

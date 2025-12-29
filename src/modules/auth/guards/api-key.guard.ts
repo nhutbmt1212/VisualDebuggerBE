@@ -27,8 +27,7 @@ export class ApiKeyGuard implements CanActivate {
       throw new UnauthorizedException('Invalid API Key');
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-    (request as any).project = project;
+    request.project = project;
     return true;
   }
 }

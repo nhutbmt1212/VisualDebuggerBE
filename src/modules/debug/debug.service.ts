@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
+import { Prisma, DebugSession, DebugEvent } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { DebugGateway } from './debug.gateway';
 import type { CreateSessionDto, CreateEventDto } from './dto/debug.dto';
@@ -11,7 +11,10 @@ export class DebugService {
     private gateway: DebugGateway,
   ) {}
 
-  async createSession(projectId: string, data: CreateSessionDto) {
+  async createSession(
+    projectId: string,
+    data: CreateSessionDto,
+  ): Promise<DebugSession> {
     const session = await this.prisma.debugSession.create({
       data: {
         projectId,
@@ -26,7 +29,7 @@ export class DebugService {
     return session;
   }
 
-  async endSession(id: string) {
+  async endSession(id: string): Promise<DebugSession> {
     const session = await this.prisma.debugSession.update({
       where: { id },
       data: { endedAt: new Date() },
@@ -59,7 +62,10 @@ export class DebugService {
     }
   }
 
-  async createEvent(projectId: string, data: any) {
+  async createEvent(
+    projectId: string,
+    data: CreateEventDto,
+  ): Promise<DebugEvent> {
     await this.ensureSession(projectId, data.sessionId);
 
     // Handle parentEventId safely - only link if it exists
@@ -108,7 +114,10 @@ export class DebugService {
     return event;
   }
 
-  async createEvents(projectId: string, events: any[]) {
+  async createEvents(
+    projectId: string,
+    events: CreateEventDto[],
+  ): Promise<DebugEvent[]> {
     // Pre-ensure all unique sessions in the batch
     const sessionIds = [...new Set(events.map((e) => e.sessionId))];
     for (const sid of sessionIds) {

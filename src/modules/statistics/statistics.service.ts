@@ -3,6 +3,17 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { DashboardStats } from './models/dashboard-stats.model';
 import { Prisma } from '@prisma/client';
 
+interface DashboardStatsRaw {
+  total: number;
+  errors: number;
+  avg_latency: number | null;
+}
+
+interface TrendRaw {
+  time_bucket: Date;
+  count: number;
+}
+
 @Injectable()
 export class StatisticsService {
   constructor(private prisma: PrismaService) {}
@@ -140,7 +151,7 @@ export class StatisticsService {
   }
 
   private async calculateStats(projectIds: string[], start: Date, end: Date) {
-    const stats: any[] = await this.prisma.$queryRaw`
+    const stats = await this.prisma.$queryRaw<DashboardStatsRaw[]>`
       SELECT 
         count(*)::int as total,
         count(*) FILTER (WHERE e.type = 'ERROR')::int as errors,
@@ -192,7 +203,7 @@ export class StatisticsService {
       interval = 'hour';
     }
 
-    const results: any[] = await this.prisma.$queryRaw`
+    const results = await this.prisma.$queryRaw<TrendRaw[]>`
       SELECT 
         date_trunc(${interval}, e.timestamp) as time_bucket,
         count(*)::int as count
