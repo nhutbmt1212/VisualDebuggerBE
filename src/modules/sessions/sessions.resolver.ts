@@ -16,6 +16,7 @@ import type {
 import { SessionsService } from './sessions.service';
 import { DebugSession } from './models/session.model';
 import { PaginatedSessions } from './models/paginated-sessions.model';
+import { PaginatedEvents } from './models/paginated-events.model';
 import { GqlAuthGuard } from '../auth/guards/gql-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 
@@ -58,6 +59,21 @@ export class SessionsResolver {
     @CurrentUser() user: UserEntity,
   ) {
     return this.sessionsService.findOne(id, user.id);
+  }
+
+  @Query(() => PaginatedEvents)
+  async sessionEvents(
+    @Args('sessionId', { type: () => ID }) sessionId: string,
+    @Args('page', { type: () => Int, defaultValue: 1 }) page: number,
+    @Args('limit', { type: () => Int, defaultValue: 10 }) limit: number,
+    @CurrentUser() user: UserEntity,
+  ) {
+    return this.sessionsService.findSessionEvents(
+      sessionId,
+      user.id,
+      page,
+      limit,
+    );
   }
 
   @Mutation(() => DebugSession)

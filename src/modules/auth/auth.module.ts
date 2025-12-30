@@ -6,17 +6,18 @@ import { AuthService } from './auth.service';
 import { AuthResolver } from './auth.resolver';
 import { UsersModule } from '../users/users.module';
 import { JwtStrategy } from './strategies/jwt.strategy';
+import { PrismaModule } from '../../prisma/prisma.module';
 
 @Module({
   imports: [
     UsersModule,
     PassportModule,
+    PrismaModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (configService: ConfigService): JwtModuleOptions => {
         const secret = configService.get<string>('JWT_SECRET');
-        const expiresIn = configService.get<string>('JWT_EXPIRES_IN');
 
         if (!secret) {
           throw new Error('JWT_SECRET is not defined in environment variables');
@@ -24,10 +25,7 @@ import { JwtStrategy } from './strategies/jwt.strategy';
 
         return {
           secret,
-          signOptions: {
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-            expiresIn: (expiresIn || '7d') as any,
-          },
+          signOptions: {},
         };
       },
     }),
@@ -35,4 +33,4 @@ import { JwtStrategy } from './strategies/jwt.strategy';
   providers: [AuthService, AuthResolver, JwtStrategy],
   exports: [AuthService],
 })
-export class AuthModule {}
+export class AuthModule { }

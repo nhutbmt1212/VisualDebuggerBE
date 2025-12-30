@@ -4,6 +4,7 @@
 
 type AuthResponse {
   accessToken: String!
+  refreshToken: String!
   user: User!
 }
 
@@ -77,9 +78,21 @@ type Mutation {
   deleteProject(id: ID!): Project!
   deleteSession(id: ID!): DebugSession!
   login(input: LoginInput!): AuthResponse!
+  logout(input: RefreshTokenInput!): Boolean!
+  refreshToken(input: RefreshTokenInput!): AuthResponse!
   regenerateProjectKey(id: ID!): Project!
   register(input: RegisterInput!): AuthResponse!
   updateProject(id: ID!, input: UpdateProjectInput!): Project!
+}
+
+type PaginatedEvents {
+  hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
+  items: [DebugEvent!]!
+  limit: Int!
+  page: Int!
+  totalCount: Int!
+  totalPages: Int!
 }
 
 type PaginatedProjects {
@@ -123,7 +136,12 @@ type Query {
   projects(limit: Int! = 10, page: Int! = 1): PaginatedProjects!
   recentSessions(limit: Int! = 5, page: Int! = 1): PaginatedSessions!
   session(id: ID!): DebugSession!
+  sessionEvents(limit: Int! = 10, page: Int! = 1, sessionId: ID!): PaginatedEvents!
   sessions(limit: Int! = 10, page: Int! = 1, projectId: ID!): PaginatedSessions!
+}
+
+input RefreshTokenInput {
+  refreshToken: String!
 }
 
 input RegisterInput {

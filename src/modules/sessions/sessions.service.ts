@@ -108,4 +108,48 @@ export class SessionsService {
       hasPreviousPage: page > 1,
     };
   }
+
+  async findSessionEvents(
+    sessionId: string,
+    userId: string,
+    page = 1,
+    limit = 10,
+  ) {
+    // Verify session belongs to user
+    const session = await this.prisma.debugSession.findUnique({
+      where: { id: sessionId },
+      include: { project: true },
+    });
+
+    if (!session || session.project.userId !== userId) {
+      throw new NotFoundException('Session not found');
+    }
+
+    const skip = (page - 1) * limit;
+
+    const [items, totalCount] = await this.prisma.$transaction([
+      this.prisma.debugEvent.findMany({
+        where: { sessionId },
+        orderBy: { timestamp: 'asc' }, // Old to new
+        take: limit,
+        skip,
+        include: { childEvents: true },
+      }),
+      this.prisma.debugEvent.count({
+        where: { sessionId },
+      }),
+    ]);
+
+    const totalPages = Math.ceil(totalCount / limit);
+
+    return {
+      items,
+      totalCount,
+      page,
+      limit,
+      totalPages,
+      hasNextPage: page < totalPages,
+      hasPreviousPage: page > 1,
+    };
+  }
 }
