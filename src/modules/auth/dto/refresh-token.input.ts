@@ -3,8 +3,8 @@ import { IsNotEmpty, IsString } from 'class-validator';
 
 @InputType()
 export class RefreshTokenInput {
-    @Field()
-    @IsString()
-    @IsNotEmpty()
-    refreshToken: string;
+  @Field()
+  @IsString()
+  @IsNotEmpty()
+  refreshToken: string;
 }

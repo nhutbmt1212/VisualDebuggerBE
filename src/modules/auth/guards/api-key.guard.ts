@@ -21,6 +21,7 @@ export class ApiKeyGuard implements CanActivate {
 
     const project = await this.prisma.project.findUnique({
       where: { apiKey },
+      include: { user: true },
     });
 
     if (!project) {

@@ -3,6 +3,7 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { CreateProjectInput, UpdateProjectInput } from './dto/project.input';
 import { v4 as uuidv4 } from 'uuid';
 import { Prisma } from '@prisma/client';
+import { STORAGE_LIMITS } from '../../common/constants/storage-limit.constants';
 
 interface ProjectTrendRaw {
   projectId: string;
@@ -17,7 +18,7 @@ interface SingleProjectTrendRaw {
 
 @Injectable()
 export class ProjectsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
   async findAll(userId: string, page = 1, limit = 10) {
     const skip = (page - 1) * limit;
@@ -58,6 +59,9 @@ export class ProjectsService {
     const now = new Date();
     const itemsWithTrend = items.map((project) => {
       const hourlyCounts = new Array(24).fill(0);
+      const storageLimit =
+        project.storageLimit ??
+        STORAGE_LIMITS[project.user.plan as keyof typeof STORAGE_LIMITS];
 
       const projectTrends = trendResults.filter(
         (r) => r.projectId === project.id,
@@ -73,6 +77,8 @@ export class ProjectsService {
 
       return {
         ...project,
+        storageLimit: storageLimit.toString(),
+        storageUsage: project.storageUsage.toString(),
         activityTrend: hourlyCounts,
       };
     });
@@ -124,15 +130,21 @@ export class ProjectsService {
       }
     });
 
+    const storageLimit =
+      project.storageLimit ??
+      STORAGE_LIMITS[project.user.plan as keyof typeof STORAGE_LIMITS];
+
     return {
       ...project,
+      storageLimit: storageLimit.toString(),
+      storageUsage: project.storageUsage.toString(),
       activityTrend: hourlyCounts,
     };
   }
 
   async create(userId: string, input: CreateProjectInput) {
     const apiKey = `vd_${uuidv4().replace(/-/g, '')}`;
-    return this.prisma.project.create({
+    const project = await this.prisma.project.create({
       data: {
         ...input,
         apiKey,
@@ -140,15 +152,31 @@ export class ProjectsService {
       },
       include: { user: true },
     });
+    return {
+      ...project,
+      storageUsage: project.storageUsage.toString(),
+      storageLimit: (
+        project.storageLimit ??
+        STORAGE_LIMITS[project.user.plan as keyof typeof STORAGE_LIMITS]
+      ).toString(),
+    };
   }
 
   async update(id: string, userId: string, input: UpdateProjectInput) {
     await this.findOne(id, userId);
-    return this.prisma.project.update({
+    const project = await this.prisma.project.update({
       where: { id },
       data: input,
       include: { user: true },
     });
+    return {
+      ...project,
+      storageUsage: project.storageUsage.toString(),
+      storageLimit: (
+        project.storageLimit ??
+        STORAGE_LIMITS[project.user.plan as keyof typeof STORAGE_LIMITS]
+      ).toString(),
+    };
   }
 
   async delete(id: string, userId: string) {
@@ -159,10 +187,18 @@ export class ProjectsService {
   async regenerateApiKey(id: string, userId: string) {
     await this.findOne(id, userId);
     const apiKey = `vd_${uuidv4().replace(/-/g, '')}`;
-    return this.prisma.project.update({
+    const project = await this.prisma.project.update({
       where: { id },
       data: { apiKey },
       include: { user: true },
     });
+    return {
+      ...project,
+      storageUsage: project.storageUsage.toString(),
+      storageLimit: (
+        project.storageLimit ??
+        STORAGE_LIMITS[project.user.plan as keyof typeof STORAGE_LIMITS]
+      ).toString(),
+    };
   }
 }

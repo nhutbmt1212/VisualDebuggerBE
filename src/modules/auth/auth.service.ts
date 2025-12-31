@@ -26,7 +26,8 @@ export class AuthService {
     private prisma: PrismaService,
     private configService: ConfigService,
   ) {
-    this.accessTokenExpiresIn = this.configService.get<string>('JWT_ACCESS_EXPIRES_IN') || '15m';
+    this.accessTokenExpiresIn =
+      this.configService.get<string>('JWT_ACCESS_EXPIRES_IN') || '15m';
     this.refreshTokenExpiresInDays = parseInt(
       this.configService.get<string>('JWT_REFRESH_EXPIRES_IN_DAYS') || '7',
       10,
@@ -38,6 +39,7 @@ export class AuthService {
       id: user.id,
       email: user.email,
       name: user.name || undefined,
+      plan: user.plan,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
     };
@@ -46,7 +48,7 @@ export class AuthService {
   private generateAccessToken(user: UserEntity): string {
     return this.jwtService.sign(
       { sub: user.id, email: user.email },
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       { expiresIn: this.accessTokenExpiresIn as any },
     );
   }
@@ -173,10 +175,7 @@ export class AuthService {
   async cleanupExpiredTokens(): Promise<number> {
     const result = await this.prisma.refreshToken.deleteMany({
       where: {
-        OR: [
-          { expiresAt: { lt: new Date() } },
-          { revokedAt: { not: null } },
-        ],
+        OR: [{ expiresAt: { lt: new Date() } }, { revokedAt: { not: null } }],
       },
     });
     return result.count;

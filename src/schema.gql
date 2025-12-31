@@ -122,9 +122,10 @@ type Project {
   description: String
   id: ID!
   name: String!
+  storageLimit: String
+  storageUsage: String!
   updatedAt: DateTime!
   user: User!
-  userId: String!
 }
 
 type Query {
@@ -165,5 +166,6 @@ type User {
   email: String!
   id: ID!
   name: String
+  plan: String!
   updatedAt: DateTime!
 }

@@ -16,7 +16,10 @@ export class Project {
   apiKey: string;
 
   @Field()
-  userId: string;
+  storageUsage: string;
+
+  @Field({ nullable: true })
+  storageLimit?: string;
 
   @Field(() => User)
   user: User;

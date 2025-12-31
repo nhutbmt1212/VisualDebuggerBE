@@ -31,10 +31,23 @@ export class TransformInterceptor<T> implements NestInterceptor<
       map(
         (data: T): SuccessResponse<T> => ({
           success: true,
-          data,
+          data: this.serialize(data),
           timestamp: new Date().toISOString(),
         }),
       ),
     );
+  }
+
+  private serialize(obj: any): any {
+    if (obj === null || obj === undefined) return obj;
+    if (typeof obj === 'bigint') return obj.toString();
+    if (Array.isArray(obj)) return obj.map((item) => this.serialize(item));
+    if (typeof obj === 'object') {
+      if (obj instanceof Date) return obj;
+      return Object.fromEntries(
+        Object.entries(obj).map(([key, value]) => [key, this.serialize(value)]),
+      );
+    }
+    return obj;
   }
 }

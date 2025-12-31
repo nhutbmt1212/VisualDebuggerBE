@@ -1,15 +1,16 @@
-import { Injectable } from '@nestjs/common';
-import { Prisma, DebugSession, DebugEvent } from '@prisma/client';
+import { ForbiddenException, Injectable } from '@nestjs/common';
+import { Prisma, DebugSession, DebugEvent, Plan } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { DebugGateway } from './debug.gateway';
 import type { CreateSessionDto, CreateEventDto } from './dto/debug.dto';
+import { STORAGE_LIMITS } from '../../common/constants/storage-limit.constants';
 
 @Injectable()
 export class DebugService {
   constructor(
     private prisma: PrismaService,
     private gateway: DebugGateway,
-  ) {}
+  ) { }
 
   async createSession(
     projectId: string,
@@ -62,10 +63,34 @@ export class DebugService {
     }
   }
 
+  private calculateSize(data: any): bigint {
+    return BigInt(Buffer.byteLength(JSON.stringify(data || {})));
+  }
+
   async createEvent(
     projectId: string,
     data: CreateEventDto,
   ): Promise<DebugEvent> {
+    const project = await this.prisma.project.findUnique({
+      where: { id: projectId },
+      include: { user: true },
+    });
+
+    if (!project) {
+      throw new Error('Project not found');
+    }
+
+    const limit =
+      project.storageLimit ??
+      STORAGE_LIMITS[project.user.plan as keyof typeof STORAGE_LIMITS];
+    const eventSize = this.calculateSize(data);
+
+    if (project.storageUsage + eventSize > limit) {
+      throw new ForbiddenException(
+        `Storage limit reached for project ${project.name}. Used: ${project.storageUsage} bytes, Limit: ${limit} bytes.`,
+      );
+    }
+
     await this.ensureSession(projectId, data.sessionId);
 
     // Handle parentEventId safely - only link if it exists
@@ -107,6 +132,16 @@ export class DebugService {
       },
       include: {
         session: true,
+      },
+    });
+
+    // Update storage usage
+    await this.prisma.project.update({
+      where: { id: projectId },
+      data: {
+        storageUsage: {
+          increment: eventSize,
+        },
       },
     });
 

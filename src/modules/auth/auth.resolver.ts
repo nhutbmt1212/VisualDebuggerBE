@@ -6,7 +6,7 @@ import { AuthResponse } from './models/auth-response.model';
 
 @Resolver()
 export class AuthResolver {
-  constructor(private authService: AuthService) { }
+  constructor(private authService: AuthService) {}
 
   @Mutation(() => AuthResponse)
   async register(@Args('input') input: RegisterInput) {

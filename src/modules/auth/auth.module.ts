@@ -33,4 +33,4 @@ import { PrismaModule } from '../../prisma/prisma.module';
   providers: [AuthService, AuthResolver, JwtStrategy],
   exports: [AuthService],
 })
-export class AuthModule { }
+export class AuthModule {}

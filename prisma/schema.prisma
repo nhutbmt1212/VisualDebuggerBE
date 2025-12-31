@@ -7,11 +7,17 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum Plan {
+  FREE
+  PRO
+}
+
 model User {
   id           String    @id @default(uuid())
   email        String    @unique
   passwordHash String    @map("password_hash")
   name         String?
+  plan         Plan      @default(FREE)
   createdAt    DateTime  @default(now()) @map("created_at")
   updatedAt    DateTime  @updatedAt @map("updated_at")
 
@@ -39,13 +45,15 @@ model RefreshToken {
 }
 
 model Project {
-  id          String   @id @default(uuid())
-  name        String
-  description String?
-  apiKey      String   @unique @map("api_key")
-  userId      String   @map("user_id")
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+  id           String   @id @default(uuid())
+  name         String
+  description  String?
+  apiKey       String   @unique @map("api_key")
+  userId       String   @map("user_id")
+  storageUsage BigInt   @default(0) @map("storage_usage")
+  storageLimit BigInt?  @map("storage_limit")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
 
   user     User           @relation(fields: [userId], references: [id], onDelete: Cascade)
   sessions DebugSession[]
